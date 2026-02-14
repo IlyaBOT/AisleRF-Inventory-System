@@ -1,0 +1,98 @@
+services:
+  db:
+    image: postgres:16-alpine
+    profiles: ["dev", "prod"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-inventory}
+      POSTGRES_USER: ${POSTGRES_USER:-inventory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend-dev:
+    build:
+      context: ./backend
+      target: dev
+    profiles: ["dev"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: ${APP_NAME:-Workshop Inventory}
+      APP_MODE: dev
+      POSTGRES_DB: ${POSTGRES_DB:-inventory}
+      POSTGRES_USER: ${POSTGRES_USER:-inventory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      JWT_SECRET: ${JWT_SECRET:-change_me_super_secret}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    ports:
+      - "${BACKEND_DEV_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app:delegated
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    profiles: ["prod"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: ${APP_NAME:-Workshop Inventory}
+      APP_MODE: prod
+      POSTGRES_DB: ${POSTGRES_DB:-inventory}
+      POSTGRES_USER: ${POSTGRES_USER:-inventory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      JWT_SECRET: ${JWT_SECRET:-change_me_super_secret}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    command: gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:8000 app.main:app
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: dev
+    profiles: ["dev"]
+    depends_on:
+      - backend-dev
+    environment:
+      VITE_API_BASE: http://localhost:${BACKEND_DEV_PORT:-8000}/api
+      VITE_APP_MODE: dev
+    ports:
+      - "${FRONTEND_DEV_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+    command: sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+      args:
+        VITE_API_BASE: /api
+        VITE_APP_MODE: prod
+    profiles: ["prod"]
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PROD_PORT:-8080}:8080"
+
+volumes:
+  pgdata:

@@ -1,0 +1,239 @@
+from __future__ import annotations
+
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_user
+from app.db.models import Category, Lot, Tag, Transaction, Warehouse
+from app.db.session import get_session
+from app.schemas.lot import ConsumeRequest, LotCreate, LotPublic, LotUpdate
+from app.services.image import normalize_avatar_or_lot_image
+from app.services.purchase import purchase_label
+
+router = APIRouter(prefix="/lots", tags=["lots"])
+
+
+async def _get_or_create_categories(session: AsyncSession, names: list[str]) -> list[Category]:
+    out: list[Category] = []
+    for raw in names:
+        name = raw.strip()
+        if not name:
+            continue
+        res = await session.execute(select(Category).where(func.lower(Category.name) == name.lower()))
+        cat = res.scalar_one_or_none()
+        if not cat:
+            cat = Category(name=name)
+            session.add(cat)
+            await session.flush()
+        out.append(cat)
+    return out
+
+
+async def _get_or_create_tags(session: AsyncSession, names: list[str]) -> list[Tag]:
+    out: list[Tag] = []
+    for raw in names:
+        name = raw.strip()
+        if not name:
+            continue
+        res = await session.execute(select(Tag).where(func.lower(Tag.name) == name.lower()))
+        tag = res.scalar_one_or_none()
+        if not tag:
+            tag = Tag(name=name)
+            session.add(tag)
+            await session.flush()
+        out.append(tag)
+    return out
+
+
+def _lot_to_public(lot: Lot) -> LotPublic:
+    return LotPublic(
+        uid=lot.uid,
+        warehouse_id=lot.warehouse_id,
+        name=lot.name,
+        categories=[c.name for c in lot.categories],
+        tags=[t.name for t in lot.tags],
+        quantity=lot.quantity,
+        price=float(lot.price) if lot.price is not None else None,
+        currency=lot.currency,
+        purchase_url=lot.purchase_url,
+        purchase_label=purchase_label(lot.purchase_url),
+        image_base64=lot.image_base64,
+        created_at=lot.created_at,
+        updated_at=lot.updated_at,
+    )
+
+
+@router.get("", response_model=list[LotPublic])
+async def list_lots(
+    warehouse_id: int = Query(..., description="Warehouse id"),
+    q: Optional[str] = Query(default=None, description="Text search"),
+    price_min: Optional[float] = None,
+    price_max: Optional[float] = None,
+    categories: list[str] = Query(default=[]),
+    tags: list[str] = Query(default=[]),
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    _user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[LotPublic]:
+    # ensure warehouse exists
+    res = await session.execute(select(Warehouse).where(Warehouse.id == warehouse_id))
+    if not res.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+
+    stmt = select(Lot).where(Lot.warehouse_id == warehouse_id)
+
+    if q:
+        qq = f"%{q.strip().lower()}%"
+        stmt = stmt.where(func.lower(Lot.name).like(qq))
+
+    if price_min is not None:
+        stmt = stmt.where(Lot.price.is_not(None)).where(Lot.price >= price_min)
+    if price_max is not None:
+        stmt = stmt.where(Lot.price.is_not(None)).where(Lot.price <= price_max)
+
+    # category/tag filters: require lot has ALL selected categories/tags.
+    # Implemented via EXISTS subqueries.
+    for c in categories:
+        c = c.strip()
+        if not c:
+            continue
+        stmt = stmt.where(
+            Lot.categories.any(func.lower(Category.name) == c.lower())  # type: ignore[attr-defined]
+        )
+    for t in tags:
+        t = t.strip()
+        if not t:
+            continue
+        stmt = stmt.where(
+            Lot.tags.any(func.lower(Tag.name) == t.lower())  # type: ignore[attr-defined]
+        )
+
+    stmt = stmt.order_by(Lot.uid.desc()).limit(limit).offset(offset)
+    res = await session.execute(stmt)
+    lots = res.scalars().unique().all()
+    return [_lot_to_public(l) for l in lots]
+
+
+@router.post("", response_model=LotPublic)
+async def create_lot(
+    payload: LotCreate,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LotPublic:
+    res = await session.execute(select(Warehouse).where(Warehouse.id == payload.warehouse_id))
+    wh = res.scalar_one_or_none()
+    if not wh:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+
+    lot = Lot(
+        warehouse_id=payload.warehouse_id,
+        name=payload.name.strip(),
+        quantity=payload.quantity,
+        price=payload.price,
+        currency=payload.currency,
+        purchase_url=payload.purchase_url,
+        image_base64=normalize_avatar_or_lot_image(payload.image_base64),
+    )
+    lot.categories = await _get_or_create_categories(session, payload.categories)
+    lot.tags = await _get_or_create_tags(session, payload.tags)
+
+    session.add(lot)
+    await session.flush()  # get uid
+
+    session.add(Transaction(lot_uid=lot.uid, user_id=user.id, action="add", delta=payload.quantity))
+    await session.commit()
+    await session.refresh(lot)
+    return _lot_to_public(lot)
+
+
+@router.get("/{uid}", response_model=LotPublic)
+async def get_lot(
+    uid: int,
+    _user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LotPublic:
+    res = await session.execute(select(Lot).where(Lot.uid == uid))
+    lot = res.scalar_one_or_none()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    return _lot_to_public(lot)
+
+
+@router.patch("/{uid}", response_model=LotPublic)
+async def update_lot(
+    uid: int,
+    payload: LotUpdate,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LotPublic:
+    res = await session.execute(select(Lot).where(Lot.uid == uid))
+    lot = res.scalar_one_or_none()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+
+    if payload.name is not None:
+        lot.name = payload.name.strip()
+    if payload.quantity is not None:
+        delta = payload.quantity - lot.quantity
+        lot.quantity = payload.quantity
+        session.add(Transaction(lot_uid=lot.uid, user_id=user.id, action="adjust", delta=delta, note="manual"))
+    if payload.price is not None:
+        lot.price = payload.price
+    if payload.currency is not None:
+        lot.currency = payload.currency
+    if payload.purchase_url is not None:
+        lot.purchase_url = payload.purchase_url
+    if payload.image_base64 is not None:
+        lot.image_base64 = normalize_avatar_or_lot_image(payload.image_base64)
+
+    if payload.categories is not None:
+        lot.categories = await _get_or_create_categories(session, payload.categories)
+    if payload.tags is not None:
+        lot.tags = await _get_or_create_tags(session, payload.tags)
+
+    await session.commit()
+    await session.refresh(lot)
+    return _lot_to_public(lot)
+
+
+@router.post("/{uid}/consume", response_model=LotPublic)
+async def consume_lot(
+    uid: int,
+    payload: ConsumeRequest,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> LotPublic:
+    res = await session.execute(select(Lot).where(Lot.uid == uid))
+    lot = res.scalar_one_or_none()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot not found")
+    if lot.quantity < payload.amount:
+        raise HTTPException(status_code=400, detail="Not enough quantity")
+
+    lot.quantity -= payload.amount
+    session.add(Transaction(lot_uid=lot.uid, user_id=user.id, action="consume", delta=-payload.amount, note=payload.note))
+    await session.commit()
+    await session.refresh(lot)
+    return _lot_to_public(lot)
+
+
+@router.get("/meta/categories", response_model=list[str])
+async def list_categories(
+    _user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[str]:
+    res = await session.execute(select(Category.name).order_by(Category.name))
+    return [r[0] for r in res.all()]
+
+
+@router.get("/meta/tags", response_model=list[str])
+async def list_tags(
+    _user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[str]:
+    res = await session.execute(select(Tag.name).order_by(Tag.name))
+    return [r[0] for r in res.all()]
