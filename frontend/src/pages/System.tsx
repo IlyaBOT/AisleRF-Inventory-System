@@ -11,7 +11,7 @@ export function SystemPage({ warehouse }: { warehouse: Warehouse | null }) {
       >
         <div className="col">
           <div className="muted">
-            Тут обычно живут настройки “под офис”: роли/права, аудит, импорты/экспорты, интеграции и т.п.
+            Пока что тут пусто. Этот раздел ещё дорабатывается!
           </div>
           <div className="glass-soft" style={{ padding: 12 }}>
             <div style={{ fontWeight: 800 }}>Текущее</div>
@@ -20,10 +20,6 @@ export function SystemPage({ warehouse }: { warehouse: Warehouse | null }) {
               <br />
               Склад: <b style={{ color: "rgba(255,255,255,0.92)" }}>{warehouse?.name || "не выбран"}</b>
             </div>
-          </div>
-
-          <div className="muted" style={{ fontSize: 12 }}>
-            Если хочешь, докину сюда: управление пользователями (admin-only), экспорт CSV, импорт, и историю изменений лотов.
           </div>
         </div>
       </GlassCard>

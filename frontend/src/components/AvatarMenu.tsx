@@ -9,7 +9,6 @@ const DEFAULT_AVATAR_URL =
 
 function avatarSrc(avatar_base64?: string | null) {
   if (avatar_base64) return `data:image/jpeg;base64,${avatar_base64}`;
-  // try remote first per spec; fallback to local asset (works offline)
   return DEFAULT_AVATAR_URL || baseAvatar;
 }
 
@@ -34,7 +33,6 @@ async function fileToBase64Jpeg128(file: File): Promise<string> {
 export function AvatarMenu() {
   const { user, logout, refreshMe } = useAuth();
   const [open, setOpen] = useState(false);
-
   const src = useMemo(() => avatarSrc(user?.avatar_base64), [user?.avatar_base64]);
 
   return (
@@ -93,7 +91,7 @@ function ProfileModal({
     try {
       await api.updateMe(username);
       await onUpdated();
-      setMsg("Ок: логин обновлён");
+      setMsg("Ок: логин обновлен");
     } catch (e: any) {
       setMsg(e?.message || "Ошибка");
     } finally {
@@ -108,7 +106,7 @@ function ProfileModal({
       await api.changePassword(oldPass, newPass);
       setOldPass("");
       setNewPass("");
-      setMsg("Ок: пароль обновлён");
+      setMsg("Ок: пароль обновлен");
     } catch (e: any) {
       setMsg(e?.message || "Ошибка");
     } finally {
@@ -123,7 +121,7 @@ function ProfileModal({
       const b64 = await fileToBase64Jpeg128(file);
       await api.changeAvatar(b64);
       await onUpdated();
-      setMsg("Ок: аватар обновлён");
+      setMsg("Ок: аватар обновлен");
     } catch (e: any) {
       setMsg(e?.message || "Ошибка");
     } finally {
@@ -137,7 +135,7 @@ function ProfileModal({
     try {
       await api.changeAvatar(null);
       await onUpdated();
-      setMsg("Ок: аватар удалён");
+      setMsg("Ок: аватар удален");
     } catch (e: any) {
       setMsg(e?.message || "Ошибка");
     } finally {
@@ -214,9 +212,6 @@ function ProfileModal({
         </div>
 
         {msg ? <div className="muted">{msg}</div> : null}
-        <div className="muted" style={{ fontSize: 12 }}>
-          Подсказка: в проде лучше поставить нормальный reverse-proxy/TLS перед этим, а не светить JWT по HTTP.
-        </div>
       </div>
     </Modal>
   );

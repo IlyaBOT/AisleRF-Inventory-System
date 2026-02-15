@@ -85,7 +85,9 @@ class Lot(Base):
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), nullable=True)
     currency: Mapped[str] = mapped_column(String(8), default="RUB")
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     purchase_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    documentation_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     image_base64: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

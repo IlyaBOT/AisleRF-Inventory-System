@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import "../styles/glass.css";
 
 export function Modal({
@@ -12,7 +13,7 @@ export function Modal({
   onClose: () => void;
   footer?: React.ReactNode;
 }) {
-  return (
+  const modal = (
     <div className="backdrop" onMouseDown={onClose}>
       <div className="glass modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between" }}>
@@ -27,4 +28,7 @@ export function Modal({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return modal;
+  return createPortal(modal, document.body);
 }

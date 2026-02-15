@@ -29,7 +29,7 @@ export function LoginPage() {
       <div className="glass" style={{ padding: 18, width: "min(520px, 100%)" }}>
         <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Вход</div>
         <div className="muted" style={{ marginBottom: 14 }}>
-          Да, это инвентаризация. Нет, Excel тут не главный герой 😌
+          Excel больше не главный герой.
         </div>
 
         <form onSubmit={submit} className="col">
@@ -46,7 +46,7 @@ export function LoginPage() {
           </button>
         </form>
 
-        {msg ? <div className="muted" style={{ marginTop: 10 }}>{msg}</div> : null}
+        {msg ? <div className="auth-error" role="alert">{msg}</div> : null}
         <div className="muted" style={{ marginTop: 10, fontSize: 12 }}>
           По умолчанию: admin / admin123
         </div>

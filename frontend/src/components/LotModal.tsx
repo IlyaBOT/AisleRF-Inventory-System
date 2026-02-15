@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import * as api from "../api/client";
 import type { Lot } from "../api/types";
@@ -41,14 +41,46 @@ export function LotModal({
   const [quantity, setQuantity] = useState("0");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("RUB");
+  const [description, setDescription] = useState("");
   const [purchase_url, setPurchaseUrl] = useState("");
+  const [documentationInput, setDocumentationInput] = useState("");
+  const [documentationFile, setDocumentationFile] = useState<File | null>(null);
+  const [documentation_url, setDocumentationUrl] = useState<string | null>(null);
   const [categoriesRaw, setCategoriesRaw] = useState("");
   const [tagsRaw, setTagsRaw] = useState("");
   const [imageB64, setImageB64] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [docBusy, setDocBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const imgSrc = useMemo(() => (imageB64 ? `data:image/jpeg;base64,${imageB64}` : null), [imageB64]);
+
+  async function addDocumentation() {
+    if (busy || docBusy) return;
+    setMsg(null);
+
+    if (!documentationInput.trim() && !documentationFile) {
+      setMsg("Укажите ссылку или выберите файл даташита");
+      return;
+    }
+
+    setDocBusy(true);
+    try {
+      if (documentationFile) {
+        const uploaded = await api.uploadLotDocumentation(documentationFile);
+        setDocumentationUrl(uploaded.url);
+        setDocumentationFile(null);
+        setDocumentationInput("");
+      } else {
+        setDocumentationUrl(documentationInput.trim());
+        setDocumentationInput("");
+      }
+    } catch (e: any) {
+      setMsg(e?.message || "Ошибка загрузки документации");
+    } finally {
+      setDocBusy(false);
+    }
+  }
 
   async function create() {
     setBusy(true);
@@ -60,7 +92,9 @@ export function LotModal({
         quantity: Math.max(0, parseInt(quantity, 10) || 0),
         price: price.trim() ? Math.max(0, Number(price)) : null,
         currency,
+        description: description.trim() || null,
         purchase_url: purchase_url.trim() || null,
+        documentation_url: documentation_url || documentationInput.trim() || null,
         categories: splitTokens(categoriesRaw),
         tags: splitTokens(tagsRaw),
         image_base64: imageB64
@@ -80,10 +114,10 @@ export function LotModal({
       onClose={onClose}
       footer={
         <>
-          <button className="btn" onClick={onClose} disabled={busy}>
+          <button className="btn" onClick={onClose} disabled={busy || docBusy}>
             Отменить
           </button>
-          <button className="btn primary" onClick={create} disabled={busy || !name.trim()}>
+          <button className="btn primary" onClick={create} disabled={busy || docBusy || !name.trim()}>
             Добавить
           </button>
         </>
@@ -117,6 +151,18 @@ export function LotModal({
         </div>
 
         <div>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Описание (опц.)</div>
+          <textarea
+            className="input"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Короткое описание компонента"
+            style={{ resize: "vertical" }}
+          />
+        </div>
+
+        <div>
           <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Источник покупки (ссылка)</div>
           <input
             className="input"
@@ -124,6 +170,48 @@ export function LotModal({
             value={purchase_url}
             onChange={(e) => setPurchaseUrl(e.target.value)}
           />
+        </div>
+
+        <div className="glass-soft" style={{ padding: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Документация / даташит (опц.)</div>
+          <div className="col">
+            <input
+              className="input"
+              placeholder="https://example.com/datasheet.pdf"
+              value={documentationInput}
+              onChange={(e) => setDocumentationInput(e.target.value)}
+            />
+            <input
+              className="input"
+              type="file"
+              accept=".pdf,.txt,.md,.rtf,.doc,.docx,.xls,.xlsx,.csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                if (f && f.size > 10 * 1024 * 1024) {
+                  setMsg("Файл слишком большой (максимум 10 МБ)");
+                  setDocumentationFile(null);
+                  e.currentTarget.value = "";
+                  return;
+                }
+                setDocumentationFile(f);
+              }}
+            />
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <button className="btn primary" type="button" onClick={addDocumentation} disabled={busy || docBusy}>
+                {docBusy ? "Загрузка..." : "Добавить"}
+              </button>
+              {documentation_url ? (
+                <div className="row" style={{ gap: 8 }}>
+                  <a href={documentation_url} target="_blank" rel="noreferrer">Открыть</a>
+                  <button className="btn" type="button" onClick={() => setDocumentationUrl(null)} disabled={busy || docBusy}>
+                    Удалить
+                  </button>
+                </div>
+              ) : (
+                <span className="muted">Пока не добавлено</span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="row">
@@ -152,7 +240,7 @@ export function LotModal({
             <div>
               <div style={{ fontWeight: 700 }}>Фото</div>
               <div className="muted" style={{ fontSize: 12 }}>
-                128×128, JPEG 70% (делается на клиенте, бэк пересобирает ещё раз для стабильности)
+                128x128, JPEG 70% (делается на клиенте)
               </div>
             </div>
             <div className="row">
@@ -185,7 +273,7 @@ export function LotModal({
           ) : null}
         </div>
 
-        {msg ? <div className="muted">{msg}</div> : null}
+        {msg ? <div className="auth-error" role="alert">{msg}</div> : null}
       </div>
     </Modal>
   );

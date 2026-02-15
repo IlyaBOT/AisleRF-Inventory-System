@@ -99,12 +99,42 @@ export async function createLot(payload: any): Promise<Lot> {
   return http<Lot>("/lots", { method: "POST", body: JSON.stringify(payload) });
 }
 
+export async function uploadLotDocumentation(file: File): Promise<{ url: string; filename: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch(`${API_BASE}/lots/documentation/upload`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+    body
+  });
+  if (res.status === 401) {
+    localStorage.removeItem("access_token");
+  }
+  if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error("Файл слишком большой (максимум 10 МБ)");
+    }
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = (await res.json()) as { detail?: string };
+      throw new Error(data.detail || `HTTP ${res.status}`);
+    }
+    const txt = await res.text();
+    throw new Error(txt.trim() || `HTTP ${res.status}`);
+  }
+  return (await res.json()) as { url: string; filename: string };
+}
+
 export async function updateLot(uid: number, payload: any): Promise<Lot> {
   return http<Lot>(`/lots/${uid}`, { method: "PATCH", body: JSON.stringify(payload) });
 }
 
 export async function consumeLot(uid: number, amount: number, note?: string): Promise<Lot> {
   return http<Lot>(`/lots/${uid}/consume`, { method: "POST", body: JSON.stringify({ amount, note }) });
+}
+
+export async function deleteLot(uid: number): Promise<{ ok: boolean }> {
+  return http<{ ok: boolean }>(`/lots/${uid}`, { method: "DELETE" });
 }
 
 export async function listCategories(): Promise<string[]> {

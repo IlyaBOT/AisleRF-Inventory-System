@@ -71,7 +71,7 @@ button, input, select{
 }
 
 .container{
-  width: min(1180px, calc(100% - 36px));
+  width: 95%;
   margin: 0 auto;
 }
 
@@ -139,6 +139,12 @@ button, input, select{
   color: rgba(255,255,255,0.72);
 }
 
+.lot-table-compact th,
+.lot-table-compact td{
+  padding: 4px;
+  text-align: center;
+}
+
 .kbd{
   font-size: 12px;
   padding: 3px 6px;
@@ -157,10 +163,65 @@ button, input, select{
   align-items:center;
   justify-content:center;
   padding: 18px;
-  z-index: 50;
+  z-index: 10000;
 }
 .modal{
   width: min(760px, 100%);
   padding: 16px;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal h3{ margin: 0 0 10px 0; }
+
+.modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;           /* РіР»Р°РІРЅРѕРµ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalBody{
+  background: #fff;
+  border-radius: 12px;
+  max-width: 92vw;
+  max-height: 92vh;
+  overflow: auto;
+}
+
+/* ILYABOT_PATCH */
+
+/* 1) Modals ALWAYS on top */
+[data-radix-portal],
+[data-headlessui-portal],
+.ReactModal__Overlay,
+.ReactModal__Content,
+.modal,
+.modal-overlay,
+.modalOverlay,
+.dialog,
+.dialog-overlay,
+.DialogOverlay {
+  z-index: 9999 !important;
+}
+
+/* 2) Login subtitle (optional, if inserted) */
+.login-subtitle {
+  margin-top: 8px;
+  opacity: 0.85;
+}
+
+/* 3) Errors look like inputs */
+.auth-error,
+[role="alert"] {
+  margin-top: 12px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.20);
+  color: #ef4444;
+}
+

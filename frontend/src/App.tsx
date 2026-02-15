@@ -64,7 +64,7 @@ export default function App() {
 
             <div className="container" style={{ margin: "18px auto 28px auto" }}>
               <div className="muted" style={{ fontSize: 12 }}>
-                Workshop Inventory • {mode} • стек: FastAPI + Postgres + React • да, это всё в Docker 🧪
+                Made by IlyaBOT • 2026 • {mode} mode
               </div>
             </div>
           </RequireAuth>

@@ -15,7 +15,7 @@ function List({ title, items }: { title: string; items: any[] }) {
                 <div className="muted">#{x.uid}</div>
               </div>
               <div className="muted" style={{ fontSize: 12 }}>
-                Кол-во: <b style={{ color: "rgba(255,255,255,0.92)" }}>{x.quantity}</b>
+                Имеется: <b style={{ color: "rgba(255,255,255,0.92)" }}>{x.quantity} шт.</b>
                 {x.price != null ? ` • ${x.price.toFixed(2)} ${x.currency}` : ""}
               </div>
             </div>
@@ -55,9 +55,6 @@ export function DashboardPage({ warehouse }: { warehouse: Warehouse | null }) {
             subtitle={warehouse ? `Склад: ${warehouse.name}` : "Склад не выбран"}
             right={<button className="btn" onClick={load}>Обновить</button>}
           >
-            <div className="muted" style={{ lineHeight: 1.5 }}>
-              Здесь — быстрый обзор: что добавляли, что списывали, и что лежит “самым жирным стеком”.
-            </div>
             {msg ? <div className="muted" style={{ marginTop: 10 }}>{msg}</div> : null}
           </GlassCard>
         </div>

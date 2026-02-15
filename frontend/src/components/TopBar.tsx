@@ -37,7 +37,7 @@ export function TopBar({
     <div className="glass" style={{ padding: 14, marginTop: 18 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="row" style={{ gap: 10 }}>
-          <Tab to="/" label="Workshop Inventory" />
+          <Tab to="/" label="AisleRF" />
           <Tab to="/storage" label="Хранилище" />
           <Tab to="/system" label="Система" />
           {mode === "dev" ? <Tab to="/debug" label="Debug" /> : null}

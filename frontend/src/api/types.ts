@@ -18,7 +18,9 @@ export type Lot = {
   quantity: number;
   price?: number | null;
   currency: string;
+  description?: string | null;
   purchase_url?: string | null;
+  documentation_url?: string | null;
   purchase_label?: string | null;
   image_base64?: string | null;
   created_at: string;
