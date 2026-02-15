@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import type { Warehouse } from "../api/types";
 import * as api from "../api/client";
 import { AvatarMenu } from "./AvatarMenu";
 import { Modal } from "./Modal";
+import { useI18n } from "../context/I18nContext";
 
 function Tab({ to, label }: { to: string; label: string }) {
   return (
@@ -14,7 +15,7 @@ function Tab({ to, label }: { to: string; label: string }) {
         borderRadius: 14,
         border: "1px solid rgba(255,255,255,0.12)",
         background: isActive ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.05)",
-        color: "rgba(255,255,255,0.92)",
+        color: "#ffffff",
         textDecoration: "none"
       })}
     >
@@ -32,20 +33,24 @@ export function TopBar({
 }) {
   const mode = import.meta.env.VITE_APP_MODE || "dev";
   const [openWh, setOpenWh] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="glass" style={{ padding: 14, marginTop: 18 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <div className="row" style={{ gap: 10 }}>
-          <Tab to="/" label="AisleRF" />
-          <Tab to="/storage" label="Хранилище" />
-          <Tab to="/system" label="Система" />
-          {mode === "dev" ? <Tab to="/debug" label="Debug" /> : null}
+          <Tab to="/" label={t("tabs.brand")} />
+          <Tab to="/storage" label={t("tabs.storage")} />
+          <Tab to="/system" label={t("tabs.system")} />
+          {mode === "dev" ? <Tab to="/debug" label={t("tabs.debug")} /> : null}
         </div>
 
         <div className="row">
-          <button className="btn" onClick={() => setOpenWh(true)} title="Сменить склад">
-            {warehouse ? `Склад: ${warehouse.name}` : "Склад: …"} <span className="kbd">Ctrl</span>+<span className="kbd">K</span>
+          <button className="btn" onClick={() => setOpenWh(true)} title={t("topbar.changeWarehouseTitle")}>
+            {warehouse
+              ? t("topbar.warehouseButton", { name: warehouse.name })
+              : t("topbar.warehouseButtonEmpty")}{" "}
+            <span className="kbd">Ctrl</span>+<span className="kbd">K</span>
           </button>
           <AvatarMenu />
         </div>
@@ -75,12 +80,13 @@ function WarehouseModal({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const { t } = useI18n();
 
   async function load() {
     try {
       setItems(await api.listWarehouses());
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка загрузки складов");
+      setMsg(e?.message || t("warehouseModal.loadError"));
     }
   }
 
@@ -97,7 +103,7 @@ function WarehouseModal({
       await load();
       onPick(w);
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -105,14 +111,12 @@ function WarehouseModal({
 
   return (
     <Modal
-      title="Выбор склада"
+      title={t("warehouseModal.title")}
       onClose={onClose}
       footer={
-        <>
-          <button className="btn" onClick={onClose} disabled={busy}>
-            Закрыть
-          </button>
-        </>
+        <button className="btn" onClick={onClose} disabled={busy}>
+          {t("common.close")}
+        </button>
       }
     >
       <div className="col">
@@ -125,16 +129,21 @@ function WarehouseModal({
         </div>
 
         <div className="glass-soft" style={{ padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Создать склад</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("warehouseModal.createTitle")}</div>
           <div className="row">
-            <input className="input" placeholder="Название" value={name} onChange={(e) => setName(e.target.value)} />
+            <input
+              className="input"
+              placeholder={t("warehouseModal.namePlaceholder")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
             <button className="btn primary" onClick={create} disabled={busy || !name.trim()}>
-              Создать
+              {t("common.create")}
             </button>
           </div>
         </div>
 
-        {msg ? <div className="muted">{msg}</div> : null}
+        {msg ? <div className="auth-error">{msg}</div> : null}
       </div>
     </Modal>
   );

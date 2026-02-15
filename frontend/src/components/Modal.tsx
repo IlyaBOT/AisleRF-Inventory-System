@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../context/I18nContext";
 import "../styles/glass.css";
 
 export function Modal({
@@ -13,13 +14,14 @@ export function Modal({
   onClose: () => void;
   footer?: React.ReactNode;
 }) {
+  const { t } = useI18n();
   const modal = (
     <div className="backdrop" onMouseDown={onClose}>
       <div className="glass modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h3>{title}</h3>
-          <button className="btn" onClick={onClose} title="Закрыть">
-            ✕
+          <button className="btn" onClick={onClose} title={t("common.close")}>
+            x
           </button>
         </div>
         <div>{children}</div>

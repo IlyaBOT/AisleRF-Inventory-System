@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as api from "../api/client";
+import { useI18n } from "../context/I18nContext";
 
 export type Filters = {
   q: string;
@@ -16,6 +17,7 @@ export function FilterPanel({
   value: Filters;
   onChange: (v: Filters) => void;
 }) {
+  const { t } = useI18n();
   const [allCats, setAllCats] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -55,12 +57,12 @@ export function FilterPanel({
   return (
     <div className="glass-soft" style={{ padding: 12 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <div style={{ fontWeight: 700 }}>Фильтры</div>
+        <div style={{ fontWeight: 700 }}>{t("filter.title")}</div>
         <button
           className="btn"
           onClick={() => onChange({ q: "", priceMin: "", priceMax: "", categories: [], tags: [] })}
         >
-          Сброс
+          {t("filter.reset")}
         </button>
       </div>
 
@@ -68,10 +70,12 @@ export function FilterPanel({
 
       <div className="col">
         <div>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Поиск</div>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
+            {t("filter.searchLabel")}
+          </div>
           <input
             className="input"
-            placeholder="Например: 74HC, резистор 10к, корпус ATX..."
+            placeholder={t("filter.searchPlaceholder")}
             value={value.q}
             onChange={(e) => onChange({ ...value, q: e.target.value })}
           />
@@ -79,7 +83,9 @@ export function FilterPanel({
 
         <div className="row">
           <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Цена от</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
+              {t("filter.priceFrom")}
+            </div>
             <input
               className="input"
               placeholder="0"
@@ -88,7 +94,9 @@ export function FilterPanel({
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>до</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
+              {t("filter.priceTo")}
+            </div>
             <input
               className="input"
               placeholder="999999"
@@ -99,7 +107,7 @@ export function FilterPanel({
         </div>
 
         <div className="glass-soft" style={{ padding: 10 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Категории</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("filter.categoriesTitle")}</div>
           <div className="row" style={{ flexWrap: "wrap" }}>
             {allCats.map((c) => {
               const on = selectedCats.has(c.toLowerCase());
@@ -117,7 +125,7 @@ export function FilterPanel({
           <div className="row" style={{ marginTop: 10 }}>
             <input
               className="input"
-              placeholder="Добавить/выбрать категорию вручную"
+              placeholder={t("filter.manualCategoryPlaceholder")}
               value={catInput}
               onChange={(e) => setCatInput(e.target.value)}
               onKeyDown={(e) => {
@@ -131,17 +139,17 @@ export function FilterPanel({
         </div>
 
         <div className="glass-soft" style={{ padding: 10 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Теги</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("filter.tagsTitle")}</div>
           <div className="row" style={{ flexWrap: "wrap" }}>
-            {allTags.slice(0, 60).map((t) => {
-              const on = selectedTags.has(t.toLowerCase());
+            {allTags.slice(0, 60).map((tag) => {
+              const on = selectedTags.has(tag.toLowerCase());
               return (
                 <button
-                  key={t}
+                  key={tag}
                   className={`btn ${on ? "primary" : ""}`}
-                  onClick={() => onChange({ ...value, tags: toggle(value.tags, t) })}
+                  onClick={() => onChange({ ...value, tags: toggle(value.tags, tag) })}
                 >
-                  {t}
+                  {tag}
                 </button>
               );
             })}
@@ -149,7 +157,7 @@ export function FilterPanel({
           <div className="row" style={{ marginTop: 10 }}>
             <input
               className="input"
-              placeholder="Добавить/выбрать тег вручную"
+              placeholder={t("filter.manualTagPlaceholder")}
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
@@ -161,7 +169,7 @@ export function FilterPanel({
             </button>
           </div>
           <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Фильтр по тегам/категориям работает как “И”: лот должен содержать <b>все</b> выбранные значения.
+            {t("filter.hint")}
           </div>
         </div>
       </div>

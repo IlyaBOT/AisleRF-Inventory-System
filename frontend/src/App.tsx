@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { useI18n } from "./context/I18nContext";
 import type { Warehouse } from "./api/types";
 import * as api from "./api/client";
 import { TopBar } from "./components/TopBar";
@@ -20,6 +21,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const mode = import.meta.env.VITE_APP_MODE || "dev";
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
 
@@ -35,7 +37,6 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        // TopBar has modal button - users can click; no global open for now
         e.preventDefault();
       }
     };
@@ -64,7 +65,7 @@ export default function App() {
 
             <div className="container" style={{ margin: "18px auto 28px auto" }}>
               <div className="muted" style={{ fontSize: 12 }}>
-                Made by IlyaBOT • 2026 • {mode} mode
+                {t("app.footer", { year: 2026, mode })}
               </div>
             </div>
           </RequireAuth>

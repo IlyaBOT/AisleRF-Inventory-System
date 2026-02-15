@@ -1,0 +1,161 @@
+{
+  "common": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "close": "Close",
+    "create": "Create",
+    "delete": "Delete",
+    "error": "Error",
+    "loading": "Loading...",
+    "open": "Open",
+    "refresh": "Refresh",
+    "remove": "Remove",
+    "save": "Save",
+    "upload": "Upload"
+  },
+  "app": {
+    "footer": "Made by IlyaBOT - {year} - {mode} mode"
+  },
+  "tabs": {
+    "brand": "AisleRF",
+    "debug": "Debug",
+    "storage": "Storage",
+    "system": "System"
+  },
+  "topbar": {
+    "changeWarehouseTitle": "Change warehouse",
+    "warehouseButton": "Warehouse: {name}",
+    "warehouseButtonEmpty": "Warehouse: ..."
+  },
+  "warehouseModal": {
+    "createTitle": "Create warehouse",
+    "loadError": "Failed to load warehouses",
+    "namePlaceholder": "Name",
+    "title": "Select warehouse"
+  },
+  "avatar": {
+    "avatarDeleted": "OK: avatar removed",
+    "avatarSection": "Avatar",
+    "avatarUpdated": "OK: avatar updated",
+    "changePassword": "Change",
+    "greeting": "Hello, {username}!",
+    "logout": "Logout",
+    "newPasswordPlaceholder": "New password",
+    "oldPasswordPlaceholder": "Current password",
+    "passwordSection": "Password",
+    "passwordUpdated": "OK: password updated",
+    "settingsTitle": "User settings",
+    "usernameSection": "Username",
+    "usernameUpdated": "OK: username updated"
+  },
+  "login": {
+    "defaultCreds": "Default: admin / admin123",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "subtitle": "Excel is no longer the main hero.",
+    "title": "Sign in",
+    "usernameLabel": "Username"
+  },
+  "storage": {
+    "addLotTitle": "Add lot",
+    "lotsInfo": "Warehouse {name} - lots: {count}",
+    "title": "Storage",
+    "warehouseMissingSubtitle": "Use the button in the top right \"Warehouse: ...\" to select or create one.",
+    "warehouseMissingTitle": "Warehouse is not selected"
+  },
+  "filter": {
+    "categoriesTitle": "Categories",
+    "hint": "Tag/category filter works as AND: the lot must contain all selected values.",
+    "manualCategoryPlaceholder": "Add/select category manually",
+    "manualTagPlaceholder": "Add/select tag manually",
+    "priceFrom": "Price from",
+    "priceTo": "to",
+    "reset": "Reset",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Example: 74HC, resistor 10k, ATX case...",
+    "tagsTitle": "Tags",
+    "title": "Filters"
+  },
+  "dashboard": {
+    "available": "Available: {quantity} pcs.",
+    "empty": "Nothing to show yet.",
+    "mostUsed": "Most used",
+    "recentAdded": "Recently added",
+    "recentSubtitle": "recently",
+    "recentUsed": "Recently used",
+    "title": "Dashboard",
+    "topByQuantity": "Top-15 by quantity",
+    "warehouseMissing": "Warehouse is not selected",
+    "warehouseSelected": "Warehouse: {name}"
+  },
+  "debug": {
+    "devOnly": "Available in dev mode only",
+    "title": "Debug"
+  },
+  "system": {
+    "currentMode": "Mode",
+    "currentSection": "Current",
+    "description": "Application settings",
+    "empty": "This section is still being developed.",
+    "languageLabel": "Interface language",
+    "languageTitle": "Language",
+    "title": "System",
+    "warehouse": "Warehouse",
+    "warehouseNotSelected": "not selected"
+  },
+  "language": {
+    "en": "English",
+    "ru": "Russian"
+  },
+  "lotModal": {
+    "categoriesLabel": "Categories (comma-separated)",
+    "categoriesPlaceholder": "Cases, MCU, Resistors...",
+    "createError": "Failed to create lot",
+    "currencyLabel": "Currency",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Short description",
+    "docsAddError": "Documentation upload failed",
+    "docsChooseInput": "Specify a link or choose a documentation file",
+    "docsLabel": "Documentation / datasheet (optional)",
+    "docsNone": "Not added yet",
+    "docsPlaceholder": "https://example.com/datasheet.pdf",
+    "fileTooLarge": "File is too large (max 10 MB)",
+    "nameLabel": "Name",
+    "photoAlt": "placeholder",
+    "photoLabel": "Photo (141x141 JPEG)",
+    "priceLabel": "Price (optional)",
+    "quantityLabel": "Quantity",
+    "sourceLabel": "Source (link)",
+    "sourcePlaceholder": "https://ozon.ru/t/...",
+    "tagsLabel": "Tags (comma-separated)",
+    "tagsPlaceholder": "ATX, RGB, USB Type-C...",
+    "titleCreate": "Create lot"
+  },
+  "lotTable": {
+    "actions": "Actions",
+    "addOneFailed": "Quantity increment failed",
+    "addOneTitle": "Add 1",
+    "category": "Category",
+    "deleteConfirm": "Delete lot?",
+    "deleteFailed": "Lot deletion failed",
+    "description": "Description",
+    "docs": "Docs",
+    "docsUploadFailed": "Documentation upload failed",
+    "edit": "Edit",
+    "editTitle": "Edit lot #{uid}",
+    "empty": "No lots. Press + to create the first one.",
+    "imageProcessFailed": "Failed to process image",
+    "invalidPrice": "Price must be a number",
+    "name": "Name",
+    "noData": "-",
+    "price": "Price",
+    "quantity": "Qty",
+    "saveFailed": "Save failed",
+    "saving": "Saving...",
+    "source": "Source",
+    "tags": "Tags",
+    "uid": "UID",
+    "writeOffFailed": "Write-off failed",
+    "writeOffOneTitle": "Write off 1"
+  }
+}

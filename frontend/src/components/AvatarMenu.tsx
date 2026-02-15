@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import { useAuth } from "../context/AuthContext";
+import { useI18n } from "../context/I18nContext";
 import * as api from "../api/client";
 import baseAvatar from "../assets/base_avatar.svg";
 
@@ -32,6 +33,7 @@ async function fileToBase64Jpeg128(file: File): Promise<string> {
 
 export function AvatarMenu() {
   const { user, logout, refreshMe } = useAuth();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const src = useMemo(() => avatarSrc(user?.avatar_base64), [user?.avatar_base64]);
 
@@ -39,7 +41,7 @@ export function AvatarMenu() {
     <>
       <div className="row" style={{ gap: 10 }}>
         <div className="muted" style={{ fontSize: 13 }}>
-          Здравствуйте, <b style={{ color: "rgba(255,255,255,0.95)" }}>{user?.username}</b>!
+          {t("avatar.greeting", { username: user?.username || "user" })}{" "}
         </div>
         <button className="btn" onClick={() => setOpen(true)} style={{ padding: 6, borderRadius: 999 }}>
           <img
@@ -50,7 +52,7 @@ export function AvatarMenu() {
             alt="avatar"
             width={34}
             height={34}
-            style={{ borderRadius: 999, display: "block" }}
+            style={{ borderRadius: 999, display: "block", opacity: 1 }}
           />
         </button>
       </div>
@@ -79,6 +81,7 @@ function ProfileModal({
   onUpdated: () => Promise<void>;
 }) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [username, setUsername] = useState(user?.username || "");
   const [oldPass, setOldPass] = useState("");
   const [newPass, setNewPass] = useState("");
@@ -91,9 +94,9 @@ function ProfileModal({
     try {
       await api.updateMe(username);
       await onUpdated();
-      setMsg("Ок: логин обновлен");
+      setMsg(t("avatar.usernameUpdated"));
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -106,9 +109,9 @@ function ProfileModal({
       await api.changePassword(oldPass, newPass);
       setOldPass("");
       setNewPass("");
-      setMsg("Ок: пароль обновлен");
+      setMsg(t("avatar.passwordUpdated"));
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -121,9 +124,9 @@ function ProfileModal({
       const b64 = await fileToBase64Jpeg128(file);
       await api.changeAvatar(b64);
       await onUpdated();
-      setMsg("Ок: аватар обновлен");
+      setMsg(t("avatar.avatarUpdated"));
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -135,9 +138,9 @@ function ProfileModal({
     try {
       await api.changeAvatar(null);
       await onUpdated();
-      setMsg("Ок: аватар удален");
+      setMsg(t("avatar.avatarDeleted"));
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -145,55 +148,55 @@ function ProfileModal({
 
   return (
     <Modal
-      title="Настройки пользователя"
+      title={t("avatar.settingsTitle")}
       onClose={onClose}
       footer={
         <>
           <button className="btn danger" onClick={onLogout} disabled={busy}>
-            Выйти
+            {t("avatar.logout")}
           </button>
           <button className="btn" onClick={onClose} disabled={busy}>
-            Закрыть
+            {t("common.close")}
           </button>
         </>
       }
     >
       <div className="col">
         <div className="glass-soft" style={{ padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Логин</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("avatar.usernameSection")}</div>
           <div className="row">
             <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} />
             <button className="btn primary" onClick={saveUsername} disabled={busy}>
-              Сохранить
+              {t("common.save")}
             </button>
           </div>
         </div>
 
         <div className="glass-soft" style={{ padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Пароль</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("avatar.passwordSection")}</div>
           <div className="row">
             <input
               className="input"
-              placeholder="Старый пароль"
+              placeholder={t("avatar.oldPasswordPlaceholder")}
               type="password"
               value={oldPass}
               onChange={(e) => setOldPass(e.target.value)}
             />
             <input
               className="input"
-              placeholder="Новый пароль"
+              placeholder={t("avatar.newPasswordPlaceholder")}
               type="password"
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
             />
             <button className="btn primary" onClick={savePassword} disabled={busy}>
-              Сменить
+              {t("avatar.changePassword")}
             </button>
           </div>
         </div>
 
         <div className="glass-soft" style={{ padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Аватар</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("avatar.avatarSection")}</div>
           <div className="row" style={{ justifyContent: "space-between" }}>
             <div className="row">
               <input
@@ -205,13 +208,13 @@ function ProfileModal({
                 }}
               />
               <button className="btn" onClick={onDeleteAvatar} disabled={busy}>
-                Удалить
+                {t("common.delete")}
               </button>
             </div>
           </div>
         </div>
 
-        {msg ? <div className="muted">{msg}</div> : null}
+        {msg ? <div className="auth-error">{msg}</div> : null}
       </div>
     </Modal>
   );

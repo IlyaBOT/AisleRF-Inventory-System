@@ -1,7 +1,8 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import * as api from "../api/client";
 import type { Lot } from "../api/types";
+import { useI18n } from "../context/I18nContext";
 
 async function fileToBase64Jpeg128(file: File): Promise<string> {
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -41,6 +42,7 @@ export function LotModal({
   onClose: () => void;
   onCreated: (lot: Lot) => void;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("0");
   const [price, setPrice] = useState("");
@@ -64,7 +66,7 @@ export function LotModal({
     setMsg(null);
 
     if (!documentationInput.trim() && !documentationFile) {
-      setMsg("Укажите ссылку или выберите файл документации");
+      setMsg(t("lotModal.docsChooseInput"));
       return;
     }
 
@@ -80,7 +82,7 @@ export function LotModal({
         setDocumentationInput("");
       }
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка загрузки документации");
+      setMsg(e?.message || t("lotModal.docsAddError"));
     } finally {
       setDocBusy(false);
     }
@@ -106,7 +108,7 @@ export function LotModal({
       const lot = await api.createLot(payload);
       onCreated(lot);
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка создания");
+      setMsg(e?.message || t("lotModal.createError"));
     } finally {
       setBusy(false);
     }
@@ -114,15 +116,15 @@ export function LotModal({
 
   return (
     <Modal
-      title="Создание лота"
+      title={t("lotModal.titleCreate")}
       onClose={onClose}
       footer={
         <>
           <button className="btn" onClick={onClose} disabled={busy || docBusy}>
-            Отменить
+            {t("common.cancel")}
           </button>
           <button className="btn primary" onClick={create} disabled={busy || docBusy || !name.trim()}>
-            Добавить
+            {t("common.add")}
           </button>
         </>
       }
@@ -144,17 +146,17 @@ export function LotModal({
           >
             <img
               src={imgSrc || PLACEHOLDER_IMAGE_128}
-              alt={name || "плейсхолдер"}
+              alt={name || t("lotModal.photoAlt")}
               width={141}
               height={141}
               style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", display: "block", opacity: 1 }}
             />
             <div className="muted" style={{ fontSize: 12, marginTop: 6, textAlign: "center", width: "100%" }}>
-              Фото (141x141 JPEG)
+              {t("lotModal.photoLabel")}
             </div>
             <div className="row" style={{ gap: 4, marginTop: 4, justifyContent: "center", flexWrap: "wrap", width: "100%" }}>
               <label className="btn" style={{ margin: 0 }}>
-                Загрузить
+                {t("common.upload")}
                 <input
                   style={{ display: "none" }}
                   type="file"
@@ -168,38 +170,38 @@ export function LotModal({
                 />
               </label>
               <button className="btn" onClick={() => setImageB64(null)} disabled={!imageB64}>
-                Удалить
+                {t("common.remove")}
               </button>
             </div>
           </div>
 
           <div className="col" style={{ gap: 4, flex: 1 }}>
             <div>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Название</div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.nameLabel")}</div>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Описание (опционально)</div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.descriptionLabel")}</div>
               <textarea
                 className="input"
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Короткое описание"
+                placeholder={t("lotModal.descriptionPlaceholder")}
                 style={{ resize: "vertical" }}
               />
             </div>
             <div className="row" style={{ gap: 4 }}>
               <div style={{ width: 120 }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Кол-во</div>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.quantityLabel")}</div>
                 <input className="input" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
               </div>
               <div style={{ flex: 1 }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Цена (опционально)</div>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.priceLabel")}</div>
                 <input className="input" value={price} onChange={(e) => setPrice(e.target.value)} />
               </div>
               <div style={{ width: 140 }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Валюта</div>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.currencyLabel")}</div>
                 <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                   <option value="RUB">RUB</option>
                   <option value="USD">USD</option>
@@ -212,19 +214,19 @@ export function LotModal({
 
         <div className="row" style={{ gap: 4 }}>
           <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Категории (через запятую)</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.categoriesLabel")}</div>
             <input
               className="input"
-              placeholder="Корпуса, МК, Резисторы..."
+              placeholder={t("lotModal.categoriesPlaceholder")}
               value={categoriesRaw}
               onChange={(e) => setCategoriesRaw(e.target.value)}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Теги (через запятую)</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.tagsLabel")}</div>
             <input
               className="input"
-              placeholder="ATX, RGB, USB Type-C..."
+              placeholder={t("lotModal.tagsPlaceholder")}
               value={tagsRaw}
               onChange={(e) => setTagsRaw(e.target.value)}
             />
@@ -232,20 +234,20 @@ export function LotModal({
         </div>
 
         <div>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Источник (ссылка)</div>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.sourceLabel")}</div>
           <input
             className="input"
-            placeholder="https://ozon.ru/t/..."
+            placeholder={t("lotModal.sourcePlaceholder")}
             value={purchase_url}
             onChange={(e) => setPurchaseUrl(e.target.value)}
           />
         </div>
 
         <div>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Документация / даташит (опционально)</div>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{t("lotModal.docsLabel")}</div>
           <input
             className="input"
-            placeholder="https://example.com/datasheet.pdf"
+            placeholder={t("lotModal.docsPlaceholder")}
             value={documentation_url ?? documentationInput}
             onChange={(e) => {
               setDocumentationInput(e.target.value);
@@ -260,7 +262,7 @@ export function LotModal({
               onChange={(e) => {
                 const f = e.target.files?.[0] || null;
                 if (f && f.size > 10 * 1024 * 1024) {
-                  setMsg("Файл слишком большой (максимум 10 МБ)");
+                  setMsg(t("lotModal.fileTooLarge"));
                   setDocumentationFile(null);
                   e.currentTarget.value = "";
                   return;
@@ -269,7 +271,7 @@ export function LotModal({
               }}
             />
             <button className="btn" type="button" onClick={addDocumentation} disabled={busy || docBusy}>
-              {docBusy ? "Загрузка..." : "Добавить"}
+              {docBusy ? t("common.loading") : t("common.add")}
             </button>
             <button
               className="btn danger"
@@ -281,15 +283,19 @@ export function LotModal({
               }}
               disabled={busy || docBusy || (!documentation_url && !documentationInput.trim() && !documentationFile)}
             >
-              Удалить
+              {t("common.remove")}
             </button>
           </div>
           {documentation_url ? (
             <div style={{ marginTop: 4 }}>
-              <a href={documentation_url} target="_blank" rel="noreferrer">Открыть</a>
+              <a href={documentation_url} target="_blank" rel="noreferrer">
+                {t("common.open")}
+              </a>
             </div>
           ) : (
-              <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Пока не добавлено</div>
+            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+              {t("lotModal.docsNone")}
+            </div>
           )}
         </div>
 
