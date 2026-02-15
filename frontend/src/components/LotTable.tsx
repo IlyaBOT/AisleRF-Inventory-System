@@ -298,7 +298,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                       onClick={() => openEdit(lot)}
                       disabled={busyUid === lot.uid || editBusy}
                     >
-                      Редактировать
+                      Изменить
                     </button>
                     <button
                       className="btn danger"
