@@ -13,7 +13,7 @@ ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_LOGLEVEL=info
 
 RUN if [ -f package-lock.json ]; then \
-      npm ci; \
+      npm ci || npm install; \
     else \
       npm install; \
     fi

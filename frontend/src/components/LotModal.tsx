@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import * as api from "../api/client";
 import type { Lot } from "../api/types";
@@ -27,6 +27,10 @@ function splitTokens(s: string): string[] {
     .map((x) => x.trim())
     .filter(Boolean);
 }
+
+const PLACEHOLDER_IMAGE_128 = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="12" fill="#1f2937"/><rect x="12" y="12" width="104" height="104" rx="10" fill="#374151"/><path d="M30 86l22-26 16 18 10-12 20 20H30z" fill="#9ca3af"/><circle cx="50" cy="44" r="8" fill="#d1d5db"/></svg>'
+)}`;
 
 export function LotModal({
   warehouse_id,
@@ -60,7 +64,7 @@ export function LotModal({
     setMsg(null);
 
     if (!documentationInput.trim() && !documentationFile) {
-      setMsg("Укажите ссылку или выберите файл даташита");
+      setMsg("Укажите ссылку или выберите файл документации");
       return;
     }
 
@@ -102,7 +106,7 @@ export function LotModal({
       const lot = await api.createLot(payload);
       onCreated(lot);
     } catch (e: any) {
-      setMsg(e?.message || "Ошибка");
+      setMsg(e?.message || "Ошибка создания");
     } finally {
       setBusy(false);
     }
@@ -123,47 +127,112 @@ export function LotModal({
         </>
       }
     >
-      <div className="col">
-        <div className="row">
-          <div style={{ flex: 2 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Название</div>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+      <div className="col" style={{ gap: 6 }}>
+        <div className="row" style={{ gap: 6, alignItems: "flex-start" }}>
+          <div
+            className="glass-soft"
+            style={{
+              padding: 8,
+              minWidth: 168,
+              width: "fit-content",
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              boxSizing: "border-box"
+            }}
+          >
+            <img
+              src={imgSrc || PLACEHOLDER_IMAGE_128}
+              alt={name || "плейсхолдер"}
+              width={141}
+              height={141}
+              style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", display: "block", opacity: 1 }}
+            />
+            <div className="muted" style={{ fontSize: 12, marginTop: 6, textAlign: "center", width: "100%" }}>
+              Фото (141x141 JPEG)
+            </div>
+            <div className="row" style={{ gap: 4, marginTop: 4, justifyContent: "center", flexWrap: "wrap", width: "100%" }}>
+              <label className="btn" style={{ margin: 0 }}>
+                Загрузить
+                <input
+                  style={{ display: "none" }}
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const b64 = await fileToBase64Jpeg128(f);
+                    setImageB64(b64);
+                  }}
+                />
+              </label>
+              <button className="btn" onClick={() => setImageB64(null)} disabled={!imageB64}>
+                Удалить
+              </button>
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Количество</div>
-            <input className="input" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+
+          <div className="col" style={{ gap: 4, flex: 1 }}>
+            <div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Название</div>
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Описание (опционально)</div>
+              <textarea
+                className="input"
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Короткое описание"
+                style={{ resize: "vertical" }}
+              />
+            </div>
+            <div className="row" style={{ gap: 4 }}>
+              <div style={{ width: 120 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Кол-во</div>
+                <input className="input" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Цена (опционально)</div>
+                <input className="input" value={price} onChange={(e) => setPrice(e.target.value)} />
+              </div>
+              <div style={{ width: 140 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Валюта</div>
+                <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <option value="RUB">RUB</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="row">
+        <div className="row" style={{ gap: 4 }}>
           <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Цена (опц.)</div>
-            <input className="input" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Категории (через запятую)</div>
+            <input
+              className="input"
+              placeholder="Корпуса, МК, Резисторы..."
+              value={categoriesRaw}
+              onChange={(e) => setCategoriesRaw(e.target.value)}
+            />
           </div>
-          <div style={{ width: 120 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Валюта</div>
-            <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              <option value="RUB">RUB</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
+          <div style={{ flex: 1 }}>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Теги (через запятую)</div>
+            <input
+              className="input"
+              placeholder="ATX, RGB, USB Type-C..."
+              value={tagsRaw}
+              onChange={(e) => setTagsRaw(e.target.value)}
+            />
           </div>
         </div>
 
         <div>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Описание (опц.)</div>
-          <textarea
-            className="input"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Короткое описание компонента"
-            style={{ resize: "vertical" }}
-          />
-        </div>
-
-        <div>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Источник покупки (ссылка)</div>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Источник (ссылка)</div>
           <input
             className="input"
             placeholder="https://ozon.ru/t/..."
@@ -172,15 +241,18 @@ export function LotModal({
           />
         </div>
 
-        <div className="glass-soft" style={{ padding: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Документация / даташит (опц.)</div>
-          <div className="col">
-            <input
-              className="input"
-              placeholder="https://example.com/datasheet.pdf"
-              value={documentationInput}
-              onChange={(e) => setDocumentationInput(e.target.value)}
-            />
+        <div>
+          <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Документация / даташит (опционально)</div>
+          <input
+            className="input"
+            placeholder="https://example.com/datasheet.pdf"
+            value={documentation_url ?? documentationInput}
+            onChange={(e) => {
+              setDocumentationInput(e.target.value);
+              if (documentation_url) setDocumentationUrl(null);
+            }}
+          />
+          <div className="row" style={{ gap: 4, marginTop: 4 }}>
             <input
               className="input"
               type="file"
@@ -196,81 +268,29 @@ export function LotModal({
                 setDocumentationFile(f);
               }}
             />
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <button className="btn primary" type="button" onClick={addDocumentation} disabled={busy || docBusy}>
-                {docBusy ? "Загрузка..." : "Добавить"}
-              </button>
-              {documentation_url ? (
-                <div className="row" style={{ gap: 8 }}>
-                  <a href={documentation_url} target="_blank" rel="noreferrer">Открыть</a>
-                  <button className="btn" type="button" onClick={() => setDocumentationUrl(null)} disabled={busy || docBusy}>
-                    Удалить
-                  </button>
-                </div>
-              ) : (
-                <span className="muted">Пока не добавлено</span>
-              )}
-            </div>
+            <button className="btn" type="button" onClick={addDocumentation} disabled={busy || docBusy}>
+              {docBusy ? "Загрузка..." : "Добавить"}
+            </button>
+            <button
+              className="btn danger"
+              type="button"
+              onClick={() => {
+                setDocumentationUrl(null);
+                setDocumentationInput("");
+                setDocumentationFile(null);
+              }}
+              disabled={busy || docBusy || (!documentation_url && !documentationInput.trim() && !documentationFile)}
+            >
+              Удалить
+            </button>
           </div>
-        </div>
-
-        <div className="row">
-          <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Категории (через запятую)</div>
-            <input
-              className="input"
-              placeholder="Корпуса, МК, Резисторы..."
-              value={categoriesRaw}
-              onChange={(e) => setCategoriesRaw(e.target.value)}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Теги (через запятую)</div>
-            <input
-              className="input"
-              placeholder="ATX, RGB, USB Type-C..."
-              value={tagsRaw}
-              onChange={(e) => setTagsRaw(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="glass-soft" style={{ padding: 12 }}>
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontWeight: 700 }}>Фото</div>
-              <div className="muted" style={{ fontSize: 12 }}>
-                128x128, JPEG 70% (делается на клиенте)
-              </div>
+          {documentation_url ? (
+            <div style={{ marginTop: 4 }}>
+              <a href={documentation_url} target="_blank" rel="noreferrer">Открыть</a>
             </div>
-            <div className="row">
-              <label className="btn">
-                Загрузить
-                <input
-                  style={{ display: "none" }}
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    const b64 = await fileToBase64Jpeg128(f);
-                    setImageB64(b64);
-                  }}
-                />
-              </label>
-              {imageB64 ? (
-                <button className="btn" onClick={() => setImageB64(null)}>
-                  Удалить
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          {imgSrc ? (
-            <div style={{ marginTop: 10 }}>
-              <img src={imgSrc} width={128} height={128} style={{ borderRadius: 18 }} />
-            </div>
-          ) : null}
+          ) : (
+              <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Пока не добавлено</div>
+          )}
         </div>
 
         {msg ? <div className="auth-error" role="alert">{msg}</div> : null}

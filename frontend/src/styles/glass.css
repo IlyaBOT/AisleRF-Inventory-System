@@ -5,8 +5,8 @@
   --glass2: rgba(255,255,255,0.06);
   --stroke: rgba(255,255,255,0.18);
   --stroke2: rgba(255,255,255,0.10);
-  --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.68);
+  --text: #ffffff;
+  --muted: #ffffff;
   --accent: #69b7ff;
   --danger: #ff556a;
   --ok: #59ffa6;
@@ -136,7 +136,7 @@ button, input, select{
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.72);
+  color: #ffffff;
 }
 
 .lot-table-compact th,

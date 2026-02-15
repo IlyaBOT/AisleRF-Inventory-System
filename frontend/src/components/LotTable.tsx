@@ -112,7 +112,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
       await api.consumeLot(uid, 1, "ui");
       await onChanged();
     } catch (e: any) {
-      setActionMsg(e?.message || "Ошибка списания");
+      setActionMsg(e?.message || "Write-off failed");
     } finally {
       setBusyUid(null);
     }
@@ -125,21 +125,21 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
       await api.updateLot(lot.uid, { quantity: lot.quantity + 1 });
       await onChanged();
     } catch (e: any) {
-      setActionMsg(e?.message || "Ошибка увеличения количества");
+      setActionMsg(e?.message || "Quantity increment failed");
     } finally {
       setBusyUid(null);
     }
   }
 
   async function remove(uid: number) {
-    if (!window.confirm("Удалить лот?")) return;
+    if (!window.confirm("Delete lot?")) return;
     setActionMsg(null);
     setBusyUid(uid);
     try {
       await api.deleteLot(uid);
       await onChanged();
     } catch (e: any) {
-      setActionMsg(e?.message || "Ошибка удаления");
+      setActionMsg(e?.message || "Lot deletion failed");
     } finally {
       setBusyUid(null);
     }
@@ -186,7 +186,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
       setEditForm((prev) => (prev ? { ...prev, documentation_url: uploaded.url } : prev));
       setEditDocFile(null);
     } catch (e: any) {
-      setEditMsg(e?.message || "Ошибка загрузки документации");
+      setEditMsg(e?.message || "Documentation upload failed");
     } finally {
       setEditDocBusy(false);
     }
@@ -202,11 +202,11 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
             <th style={{ width: 86 }}>UID</th>
             <th style={{ width: "25%" }}>Название</th>
             <th style={{ width: 220 }}>Категория</th>
-            <th style={{ width: 220 }}>Теги</th>
+            <th style={{ width: 220 }}>Тэги</th>
             <th style={{ width: 110 }}>Кол-во</th>
             <th style={{ width: 140 }}>Цена</th>
             <th style={{ width: 170 }}>Источник</th>
-            <th style={{ width: 150 }}>Дока</th>
+            <th style={{ width: 150 }}>Доки</th>
             <th style={{ width: 280 }}>Действия</th>
           </tr>
         </thead>
@@ -229,7 +229,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                           alt={lot.name}
                           width={72}
                           height={72}
-                          style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover" }}
+                          style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", opacity: 1 }}
                         />
                     ) : (
                       <div
@@ -278,10 +278,10 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                 <td>
                   <div className="row" style={{ gap: 4, justifyContent: "center" }}>
                     <button
-                      className="btn danger"
+                      className="btn"
                       onClick={() => decrease(lot.uid)}
                       disabled={busyUid === lot.uid || editBusy || lot.quantity <= 0}
-                      title="Списать 1"
+                      title="Write off 1"
                     >
                       -
                     </button>
@@ -298,13 +298,13 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                       onClick={() => openEdit(lot)}
                       disabled={busyUid === lot.uid || editBusy}
                     >
-                      Изменить
+                      Редактировать
                     </button>
                     <button
                       className="btn danger"
                       onClick={() => remove(lot.uid)}
                       disabled={busyUid === lot.uid || editBusy}
-                      title="Удалить лот"
+                      title="Delete lot"
                     >
                       X
                     </button>
@@ -317,7 +317,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
           {rows.length === 0 ? (
             <tr>
               <td colSpan={9} className="muted" style={{ padding: 4 }}>
-                Тут пока пусто. Жми <b>+</b> и добавляй первый лот.
+                Нет лотов. Нажмите <b>+</b> чтобы создать первый.
               </td>
             </tr>
           ) : null}
@@ -326,7 +326,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
 
       {editForm ? (
         <Modal
-          title={`Изменить лот #${editForm.uid}`}
+          title={`Редактировать лот #${editForm.uid}`}
           onClose={closeEdit}
           footer={
             <>
@@ -339,18 +339,32 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
         >
                     <div className="col" style={{ gap: 6 }}>
             <div className="row" style={{ gap: 6, alignItems: "flex-start" }}>
-              <div className="glass-soft" style={{ padding: 8, width: 152, flexShrink: 0 }}>
+              <div
+                className="glass-soft"
+                style={{
+                  padding: 8,
+                  minWidth: 168,
+                  width: "fit-content",
+                  flexShrink: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  boxSizing: "border-box"
+                }}
+              >
                 <img
                   src={editForm.image_base64 ? `data:image/jpeg;base64,${editForm.image_base64}` : PLACEHOLDER_IMAGE_128}
                   alt={editForm.name || "placeholder"}
-                  width={128}
-                  height={128}
-                  style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", display: "block" }}
+                  width={141}
+                  height={141}
+                  style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", display: "block", opacity: 1 }}
                 />
-                <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>���� (128x128 JPEG)</div>
-                <div className="row" style={{ gap: 4, marginTop: 4 }}>
+                <div className="muted" style={{ fontSize: 12, marginTop: 6, textAlign: "center", width: "100%" }}>
+                  Photo (141x141 JPEG)
+                </div>
+                <div className="row" style={{ gap: 4, marginTop: 4, justifyContent: "center", flexWrap: "wrap", width: "100%" }}>
                   <label className="btn" style={{ margin: 0 }}>
-                    ���������
+                    Добавить
                     <input
                       style={{ display: "none" }}
                       type="file"
@@ -362,7 +376,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                           const b64 = await fileToBase64Jpeg128(f);
                           setEditForm((prev) => (prev ? { ...prev, image_base64: b64 } : prev));
                         } catch {
-                          setEditMsg("�� ������� ���������� �����������");
+                          setEditMsg("Failed to process image");
                         }
                       }}
                     />
@@ -373,14 +387,14 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                     disabled={editBusy || editDocBusy || !editForm.image_base64}
                     onClick={() => setEditForm({ ...editForm, image_base64: null })}
                   >
-                    �������
+                    Удалить
                   </button>
                 </div>
               </div>
 
               <div className="col" style={{ gap: 4, flex: 1 }}>
                 <div>
-                  <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>��������</div>
+                  <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Название</div>
                   <input
                     className="input"
                     value={editForm.name}
@@ -388,7 +402,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                   />
                 </div>
                 <div>
-                  <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>��������</div>
+                  <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Описание</div>
                   <textarea
                     className="input"
                     rows={4}
@@ -399,7 +413,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                 </div>
                 <div className="row" style={{ gap: 4 }}>
                   <div style={{ flex: 1 }}>
-                    <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>����</div>
+                    <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Цена</div>
                     <input
                       className="input"
                       value={editForm.price}
@@ -407,7 +421,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                     />
                   </div>
                   <div style={{ width: 140 }}>
-                    <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>������</div>
+                    <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Валюта</div>
                     <input
                       className="input"
                       value={editForm.currency}
@@ -420,7 +434,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
 
             <div className="row" style={{ gap: 4 }}>
               <div style={{ flex: 1 }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>��������� (����� �������)</div>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Категории через запятую</div>
                 <input
                   className="input"
                   value={editForm.categoriesRaw}
@@ -428,7 +442,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>���� (����� �������)</div>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Тэги через запятую</div>
                 <input
                   className="input"
                   value={editForm.tagsRaw}
@@ -438,7 +452,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
             </div>
 
             <div>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>�������� (������)</div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Источник (ссылка)</div>
               <input
                 className="input"
                 value={editForm.purchase_url}
@@ -447,7 +461,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
             </div>
 
             <div>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>���� (������)</div>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Доки (ссылка)</div>
               <input
                 className="input"
                 value={editForm.documentation_url}
@@ -461,7 +475,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                   onChange={(e) => {
                     const f = e.target.files?.[0] || null;
                     if (f && f.size > 10 * 1024 * 1024) {
-                      setEditMsg("���� ������� ������� (�������� 10 ��)");
+                      setEditMsg("File is too large (max 10 MB)");
                       setEditDocFile(null);
                       e.currentTarget.value = "";
                       return;
@@ -475,7 +489,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                   onClick={uploadEditDocumentation}
                   disabled={!editDocFile || editBusy || editDocBusy}
                 >
-                  {editDocBusy ? "��������..." : "���������"}
+                  {editDocBusy ? "Загрузка..." : "Загрузить"}
                 </button>
                 <button
                   className="btn danger"
@@ -486,7 +500,7 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                   }}
                   disabled={editBusy || editDocBusy || (!editDocFile && !editForm.documentation_url)}
                 >
-                  �������
+                  Удалить
                 </button>
               </div>
             </div>
@@ -498,4 +512,3 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
     </div>
   );
 }
-
