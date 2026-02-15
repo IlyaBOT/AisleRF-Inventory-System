@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import hashlib
 import re
-import secrets
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
@@ -38,6 +38,14 @@ def _safe_filename(filename: str) -> str:
     return safe or "document"
 
 
+def _public_base_url(request: Request) -> str:
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    forwarded_host = request.headers.get("x-forwarded-host")
+    if forwarded_proto and forwarded_host:
+        return f"{forwarded_proto}://{forwarded_host}"
+    return str(request.base_url).rstrip("/")
+
+
 async def _save_document_file(file: UploadFile) -> str:
     original_name = _safe_filename(file.filename or "document")
     extension = Path(original_name).suffix.lower()
@@ -51,7 +59,27 @@ async def _save_document_file(file: UploadFile) -> str:
         raise HTTPException(status_code=413, detail="File is too large (max 10 MB)")
 
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    stored_name = f"{secrets.token_hex(8)}_{original_name}"
+    digest = hashlib.sha256(blob).hexdigest()
+
+    # Reuse existing file with the same content to avoid duplicate storage.
+    existing = next((p.name for p in UPLOADS_DIR.glob(f"{digest}_*") if p.is_file()), None)
+    if existing:
+        return existing
+
+    # Backward compatibility: old uploads used random prefixes.
+    # If we find same-size + same-hash file, reuse it too.
+    for path in UPLOADS_DIR.iterdir():
+        if not path.is_file():
+            continue
+        try:
+            if path.stat().st_size != len(blob):
+                continue
+            if hashlib.sha256(path.read_bytes()).hexdigest() == digest:
+                return path.name
+        except OSError:
+            continue
+
+    stored_name = f"{digest}_{original_name}"
     (UPLOADS_DIR / stored_name).write_bytes(blob)
     return stored_name
 
@@ -272,7 +300,7 @@ async def upload_documentation(
     _user=Depends(get_current_user),
 ) -> dict[str, str]:
     stored_name = await _save_document_file(file)
-    file_url = str(request.base_url).rstrip("/") + f"/uploads/{quote(stored_name)}"
+    file_url = _public_base_url(request) + f"/uploads/{quote(stored_name)}"
     return {"url": file_url, "filename": file.filename or stored_name}
 
 

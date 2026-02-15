@@ -10,6 +10,10 @@ export default defineConfig({
       "/api": {
         target: apiBase.replace(/\/api\s*$/, ""),
         changeOrigin: true
+      },
+      "/uploads": {
+        target: apiBase.replace(/\/api\s*$/, ""),
+        changeOrigin: true
       }
     }
   }
