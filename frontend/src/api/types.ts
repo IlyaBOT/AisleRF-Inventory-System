@@ -44,3 +44,8 @@ export type DashboardOverview = {
   top_by_quantity: DashboardLot[];
   most_used: DashboardLot[];
 };
+
+export type DbImportResult = {
+  ok: boolean;
+  imported: Record<string, number>;
+};

@@ -1,9 +1,10 @@
 import type {
+  DashboardOverview,
+  DbImportResult,
+  Lot,
   TokenResponse,
   UserPublic,
-  Warehouse,
-  Lot,
-  DashboardOverview
+  Warehouse
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
@@ -112,7 +113,7 @@ export async function uploadLotDocumentation(file: File): Promise<{ url: string;
   }
   if (!res.ok) {
     if (res.status === 413) {
-      throw new Error("Файл слишком большой (максимум 10 МБ)");
+      throw new Error("File is too large (max 10 MB)");
     }
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
@@ -148,6 +149,52 @@ export async function listTags(): Promise<string[]> {
 export async function dashboardOverview(warehouse_id: number): Promise<DashboardOverview> {
   const sp = new URLSearchParams({ warehouse_id: String(warehouse_id) });
   return http<DashboardOverview>(`/dashboard/overview?${sp.toString()}`);
+}
+
+export async function exportDatabase(): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch(`${API_BASE}/system/db/export`, {
+    method: "GET",
+    headers: { ...authHeaders() }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem("access_token");
+  }
+  if (!res.ok) {
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = (await res.json()) as { detail?: string };
+      throw new Error(data.detail || `HTTP ${res.status}`);
+    }
+    const txt = await res.text();
+    throw new Error(txt || `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const contentDisposition = res.headers.get("content-disposition") || "";
+  const match = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  return { blob, filename: match?.[1] || "aislerf_db_export.json" };
+}
+
+export async function importDatabase(file: File): Promise<DbImportResult> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch(`${API_BASE}/system/db/import`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+    body
+  });
+  if (res.status === 401) {
+    localStorage.removeItem("access_token");
+  }
+  if (!res.ok) {
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = (await res.json()) as { detail?: string };
+      throw new Error(data.detail || `HTTP ${res.status}`);
+    }
+    const txt = await res.text();
+    throw new Error(txt || `HTTP ${res.status}`);
+  }
+  return (await res.json()) as DbImportResult;
 }
 
 // dev-only

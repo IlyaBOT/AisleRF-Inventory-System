@@ -17,6 +17,9 @@ type EditForm = {
   image_base64: string | null;
 };
 
+type SortKey = "uid" | "name" | "category" | "tags" | "quantity" | "price" | "source" | "docs";
+type SortDir = "asc" | "desc";
+
 function splitTokens(s: string): string[] {
   return s
     .split(",")
@@ -79,8 +82,66 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
   const [editDocBusy, setEditDocBusy] = useState(false);
   const [editDocFile, setEditDocFile] = useState<File | null>(null);
   const [editMsg, setEditMsg] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("uid");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const rows = useMemo(() => lots, [lots]);
+  const rows = useMemo(() => {
+    const out = [...lots];
+    const dir = sortDir === "asc" ? 1 : -1;
+    const cmpText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" });
+    const cmpNumNullable = (a: number | null, b: number | null) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+      return a - b;
+    };
+
+    out.sort((a, b) => {
+      let c = 0;
+      switch (sortKey) {
+        case "uid":
+          c = a.uid - b.uid;
+          break;
+        case "name":
+          c = cmpText(a.name, b.name);
+          break;
+        case "category":
+          c = cmpText(a.categories.join(", "), b.categories.join(", "));
+          break;
+        case "tags":
+          c = cmpText(a.tags.join(", "), b.tags.join(", "));
+          break;
+        case "quantity":
+          c = a.quantity - b.quantity;
+          break;
+        case "price":
+          c = cmpNumNullable(a.price ?? null, b.price ?? null);
+          break;
+        case "source":
+          c = cmpText(a.purchase_url || "", b.purchase_url || "");
+          break;
+        case "docs":
+          c = cmpText(a.documentation_url || "", b.documentation_url || "");
+          break;
+      }
+      return c * dir;
+    });
+    return out;
+  }, [lots, sortKey, sortDir]);
+
+  function toggleSort(next: SortKey) {
+    if (next === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(next);
+    setSortDir("asc");
+  }
+
+  function sortArrow(key: SortKey): string {
+    if (sortKey !== key) return "";
+    return sortDir === "asc" ? " ^" : " v";
+  }
 
   function openEdit(lot: Lot) {
     setEditMsg(null);
@@ -200,14 +261,78 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
       <table className="table lot-table-compact">
         <thead>
           <tr>
-            <th style={{ width: 86 }}>{t("lotTable.uid")}</th>
-            <th style={{ width: "25%" }}>{t("lotTable.name")}</th>
-            <th style={{ width: 220 }}>{t("lotTable.category")}</th>
-            <th style={{ width: 220 }}>{t("lotTable.tags")}</th>
-            <th style={{ width: 110 }}>{t("lotTable.quantity")}</th>
-            <th style={{ width: 140 }}>{t("lotTable.price")}</th>
-            <th style={{ width: 170 }}>{t("lotTable.source")}</th>
-            <th style={{ width: 150 }}>{t("lotTable.docs")}</th>
+            <th style={{ width: 86 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("uid")}
+              >
+                {t("lotTable.uid")}
+                {sortArrow("uid")}
+              </button>
+            </th>
+            <th style={{ width: "25%" }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("name")}
+              >
+                {t("lotTable.name")}
+                {sortArrow("name")}
+              </button>
+            </th>
+            <th style={{ width: 220 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("category")}
+              >
+                {t("lotTable.category")}
+                {sortArrow("category")}
+              </button>
+            </th>
+            <th style={{ width: 220 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("tags")}
+              >
+                {t("lotTable.tags")}
+                {sortArrow("tags")}
+              </button>
+            </th>
+            <th style={{ width: 110 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("quantity")}
+              >
+                {t("lotTable.quantity")}
+                {sortArrow("quantity")}
+              </button>
+            </th>
+            <th style={{ width: 140 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("price")}
+              >
+                {t("lotTable.price")}
+                {sortArrow("price")}
+              </button>
+            </th>
+            <th style={{ width: 170 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("source")}
+              >
+                {t("lotTable.source")}
+                {sortArrow("source")}
+              </button>
+            </th>
+            <th style={{ width: 150 }}>
+              <button
+                style={{ padding: 0, border: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit" }}
+                onClick={() => toggleSort("docs")}
+              >
+                {t("lotTable.docs")}
+                {sortArrow("docs")}
+              </button>
+            </th>
             <th style={{ width: 280 }}>{t("lotTable.actions")}</th>
           </tr>
         </thead>
@@ -277,38 +402,42 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
                   )}
                 </td>
                 <td>
-                  <div className="row" style={{ gap: 4, justifyContent: "center" }}>
-                    <button
-                      className="btn"
-                      onClick={() => decrease(lot.uid)}
-                      disabled={busyUid === lot.uid || editBusy || lot.quantity <= 0}
-                      title={t("lotTable.writeOffOneTitle")}
-                    >
-                      -
-                    </button>
-                    <button
-                      className="btn"
-                      onClick={() => increase(lot)}
-                      disabled={busyUid === lot.uid || editBusy}
-                      title={t("lotTable.addOneTitle")}
-                    >
-                      +
-                    </button>
-                    <button
-                      className="btn primary"
-                      onClick={() => openEdit(lot)}
-                      disabled={busyUid === lot.uid || editBusy}
-                    >
-                      {t("lotTable.edit")}
-                    </button>
-                    <button
-                      className="btn danger"
-                      onClick={() => remove(lot.uid)}
-                      disabled={busyUid === lot.uid || editBusy}
-                      title={t("common.delete")}
-                    >
-                      X
-                    </button>
+                  <div className="col" style={{ gap: 4, alignItems: "center" }}>
+                    <div className="row" style={{ gap: 4, justifyContent: "center" }}>
+                      <button
+                        className="btn"
+                        onClick={() => decrease(lot.uid)}
+                        disabled={busyUid === lot.uid || editBusy || lot.quantity <= 0}
+                        title={t("lotTable.writeOffOneTitle")}
+                      >
+                        -
+                      </button>
+                      <button
+                        className="btn"
+                        onClick={() => increase(lot)}
+                        disabled={busyUid === lot.uid || editBusy}
+                        title={t("lotTable.addOneTitle")}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="row" style={{ gap: 4, justifyContent: "center" }}>
+                      <button
+                        className="btn primary"
+                        onClick={() => openEdit(lot)}
+                        disabled={busyUid === lot.uid || editBusy}
+                      >
+                        {t("lotTable.edit")}
+                      </button>
+                      <button
+                        className="btn danger"
+                        onClick={() => remove(lot.uid)}
+                        disabled={busyUid === lot.uid || editBusy}
+                        title={t("common.delete")}
+                      >
+                        X
+                      </button>
+                    </div>
                   </div>
                 </td>
               </tr>
