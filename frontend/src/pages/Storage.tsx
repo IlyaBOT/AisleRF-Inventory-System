@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import type { Lot, Warehouse } from "../api/types";
 import * as api from "../api/client";
 import { FilterPanel, type Filters } from "../components/FilterPanel";
-import { LotTable } from "../components/LotTable";
+import { LotTable, type LotViewMode } from "../components/LotTable";
 import { LotModal } from "../components/LotModal";
 import { useI18n } from "../context/I18nContext";
 
@@ -44,6 +44,7 @@ export function StoragePage({ warehouse }: { warehouse: Warehouse | null }) {
   });
   const [open, setOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<LotViewMode>("wide");
 
   const backendFilters = useMemo(() => {
     return {
@@ -152,6 +153,26 @@ export function StoragePage({ warehouse }: { warehouse: Warehouse | null }) {
                   </div>
                 </div>
                 <div className="row">
+                  <div className="row" style={{ gap: 4 }}>
+                    <button
+                      className={`btn ${viewMode === "compact" ? "primary" : ""}`}
+                      onClick={() => setViewMode("compact")}
+                    >
+                      {t("storage.viewCompact")}
+                    </button>
+                    <button
+                      className={`btn ${viewMode === "wide" ? "primary" : ""}`}
+                      onClick={() => setViewMode("wide")}
+                    >
+                      {t("storage.viewWide")}
+                    </button>
+                    <button
+                      className={`btn ${viewMode === "icons" ? "primary" : ""}`}
+                      onClick={() => setViewMode("icons")}
+                    >
+                      {t("storage.viewIcons")}
+                    </button>
+                  </div>
                   <div style={{ position: "relative" }}>
                     <button className="btn" onClick={() => setExportOpen((v) => !v)}>
                       {t("storage.exportMenu")}
@@ -203,7 +224,7 @@ export function StoragePage({ warehouse }: { warehouse: Warehouse | null }) {
             </div>
           </div>
 
-          <LotTable lots={lots} onChanged={load} />
+          <LotTable lots={lots} onChanged={load} viewMode={viewMode} />
         </div>
       </div>
 

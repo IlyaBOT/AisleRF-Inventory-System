@@ -63,6 +63,9 @@
     "exportTxt": "В .txt",
     "lotsInfo": "Склад {name} - лотов: {count}",
     "title": "Хранилище",
+    "viewCompact": "Компактный",
+    "viewIcons": "Иконки",
+    "viewWide": "Широкий",
     "warehouseMissingSubtitle": "Сверху справа кнопка \"Склад: ...\". Выберите или создайте склад.",
     "warehouseMissingTitle": "Склад не выбран"
   },
@@ -168,5 +171,10 @@
     "uid": "UID",
     "writeOffFailed": "Ошибка списания",
     "writeOffOneTitle": "Списать 1"
+  },
+  "lotView": {
+    "created": "Создан",
+    "title": "Лот #{uid}",
+    "updated": "Обновлён"
   }
 }

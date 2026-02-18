@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { Lot } from "../api/types";
 import * as api from "../api/client";
 import { Modal } from "./Modal";
+import { LotViewModal } from "./LotViewModal";
 import { useI18n } from "../context/I18nContext";
 
 type EditForm = {
@@ -16,6 +17,8 @@ type EditForm = {
   description: string;
   image_base64: string | null;
 };
+
+export type LotViewMode = "compact" | "wide" | "icons";
 
 type SortKey = "uid" | "name" | "category" | "tags" | "quantity" | "price" | "source" | "docs";
 type SortDir = "asc" | "desc";
@@ -73,11 +76,20 @@ async function fileToBase64Jpeg128(file: File): Promise<string> {
   return dataUrl.split(",")[1] || "";
 }
 
-export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Promise<void> }) {
+export function LotTable({
+  lots,
+  onChanged,
+  viewMode
+}: {
+  lots: Lot[];
+  onChanged: () => Promise<void>;
+  viewMode: LotViewMode;
+}) {
   const { t } = useI18n();
   const [busyUid, setBusyUid] = useState<number | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [viewLot, setViewLot] = useState<Lot | null>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [editDocBusy, setEditDocBusy] = useState(false);
   const [editDocFile, setEditDocFile] = useState<File | null>(null);
@@ -254,11 +266,166 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
     }
   }
 
+  const isCompact = viewMode === "compact";
+  const isIcons = viewMode === "icons";
+
+  function renderNameCell(lot: Lot, shortDescription: string | null, img: string | null) {
+    if (isCompact) {
+      return (
+        <div className="row" style={{ gap: 8, alignItems: "center", justifyContent: "flex-start" }}>
+          {img ? (
+            <img
+              src={img}
+              alt={lot.name}
+              width={64}
+              height={64}
+              style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", opacity: 1, cursor: "pointer", flexShrink: 0 }}
+              onClick={() => setViewLot(lot)}
+            />
+          ) : (
+            <div
+              className="glass-soft"
+              style={{ width: 64, height: 64, borderRadius: 10, display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}
+              onClick={() => setViewLot(lot)}
+            >
+              {t("lotTable.noData")}
+            </div>
+          )}
+          <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+            <span
+              style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, maxWidth: 220 }}
+              onClick={() => setViewLot(lot)}
+              title={lot.name}
+            >
+              {lot.name}
+            </span>
+            <span
+              className="muted"
+              style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer", minWidth: 0 }}
+              onClick={() => setViewLot(lot)}
+              title={lot.description || ""}
+            >
+              {lot.description || t("lotTable.noData")}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="col" style={{ gap: 4, alignItems: "center" }}>
+        {img ? (
+          <img
+            src={img}
+            alt={lot.name}
+            width={128}
+            height={128}
+            style={{ borderRadius: 10, border: "2px solid rgba(255,255,255,0.14)", objectFit: "cover", opacity: 1, cursor: "pointer" }}
+            onClick={() => setViewLot(lot)}
+          />
+        ) : (
+          <div
+            className="glass-soft"
+            style={{ width: 128, height: 128, borderRadius: 10, display: "grid", placeItems: "center", cursor: "pointer" }}
+            onClick={() => setViewLot(lot)}
+          >
+            {t("lotTable.noData")}
+          </div>
+        )}
+        <div style={{ fontWeight: 700, cursor: "pointer" }} onClick={() => setViewLot(lot)}>{lot.name}</div>
+        {shortDescription ? (
+          <div
+            className="muted"
+            style={{ fontSize: 11, lineHeight: 1.25, cursor: "pointer", textAlign: "center" }}
+            onClick={() => setViewLot(lot)}
+          >
+            {shortDescription}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="glass" style={{ padding: 4 }}>
       {actionMsg ? <div className="auth-error" role="alert">{actionMsg}</div> : null}
 
-      <table className="table lot-table-compact">
+      {isIcons ? (
+        <div className="lot-icons-grid">
+          {rows.map((lot) => {
+            const img = lotImg(lot);
+            const documentationHref = lot.documentation_url ? normalizeDocumentationUrl(lot.documentation_url) : null;
+            return (
+              <div key={lot.uid} className="glass-soft lot-icon-card" onClick={() => setViewLot(lot)}>
+                {img ? (
+                  <img
+                    src={img}
+                    alt={lot.name}
+                    width={128}
+                    height={128}
+                    style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.14)", objectFit: "cover", display: "block", margin: "0 auto" }}
+                  />
+                ) : (
+                  <div className="glass-soft" style={{ width: 128, height: 128, margin: "0 auto", borderRadius: 10, display: "grid", placeItems: "center" }}>
+                    {t("lotTable.noData")}
+                  </div>
+                )}
+                <div style={{ fontWeight: 800, marginTop: 8, textAlign: "center" }}>{lot.name}</div>
+                <div className="muted lot-icon-desc">{lot.description || t("lotTable.noData")}</div>
+                <div className="muted" style={{ fontSize: 12, textAlign: "center" }}>
+                  {t("lotTable.quantity")}: {lot.quantity}
+                  {lot.price != null ? ` • ${lot.price.toFixed(2)} ${lot.currency}` : ""}
+                </div>
+                <div className="row" style={{ gap: 4, justifyContent: "center", marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    className="btn"
+                    onClick={() => decrease(lot.uid)}
+                    disabled={busyUid === lot.uid || editBusy || lot.quantity <= 0}
+                    title={t("lotTable.writeOffOneTitle")}
+                  >
+                    -
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => increase(lot)}
+                    disabled={busyUid === lot.uid || editBusy}
+                    title={t("lotTable.addOneTitle")}
+                  >
+                    +
+                  </button>
+                  <button className="btn primary" onClick={() => openEdit(lot)} disabled={busyUid === lot.uid || editBusy}>
+                    {t("lotTable.edit")}
+                  </button>
+                  <button
+                    className="btn danger"
+                    onClick={() => remove(lot.uid)}
+                    disabled={busyUid === lot.uid || editBusy}
+                    title={t("common.delete")}
+                  >
+                    X
+                  </button>
+                </div>
+                <div className="row" style={{ gap: 8, justifyContent: "center", marginTop: 4 }}>
+                  {lot.purchase_url ? (
+                    <a href={lot.purchase_url} target="_blank" rel="noreferrer">{lot.purchase_label || t("common.open")}</a>
+                  ) : (
+                    <span className="muted">{t("lotTable.noData")}</span>
+                  )}
+                  {documentationHref ? (
+                    <a href={documentationHref} target="_blank" rel="noreferrer">{t("common.open")}</a>
+                  ) : (
+                    <span className="muted">{t("lotTable.noData")}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {rows.length === 0 ? (
+            <div className="muted" style={{ padding: 8 }}>{t("lotTable.empty")}</div>
+          ) : null}
+        </div>
+      ) : (
+      <table className={`table lot-table-compact ${isCompact ? "lot-table-compact-mode" : ""}`}>
         <thead>
           <tr>
             <th style={{ width: 86 }}>
@@ -341,42 +508,27 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
             const img = lotImg(lot);
             const categoryText = lot.categories.join(", ");
             const tagText = lot.tags.join(", ");
-            const shortDescription = lot.description ? truncateChars(lot.description, 52) : null;
+            const shortDescription = lot.description ? truncateChars(lot.description, isCompact ? 180 : 128) : null;
             const documentationHref = lot.documentation_url ? normalizeDocumentationUrl(lot.documentation_url) : null;
 
             return (
-              <tr key={lot.uid}>
+              <tr key={lot.uid} style={isCompact ? { height: 96, maxHeight: 128 } : undefined}>
                 <td>{lot.uid}</td>
-                <td>
-                  <div className="col" style={{ gap: 4, alignItems: "center" }}>
-                    {img ? (
-                      <img
-                        src={img}
-                        alt={lot.name}
-                        width={72}
-                        height={72}
-                        style={{ borderRadius: 10, border: "2px solid rgba(255,255,255,0.14)", objectFit: "cover", opacity: 1 }}
-                      />
-                    ) : (
-                      <div
-                        className="glass-soft"
-                        style={{ width: 72, height: 72, borderRadius: 10, display: "grid", placeItems: "center" }}
-                      >
-                        {t("lotTable.noData")}
-                      </div>
-                    )}
-                    <div style={{ fontWeight: 700 }}>{lot.name}</div>
-                    {shortDescription ? (
-                      <div className="muted" style={{ fontSize: 11, lineHeight: 1.25 }}>
-                        {shortDescription}
-                      </div>
-                    ) : null}
-                  </div>
+                <td style={isCompact ? { maxWidth: 520 } : undefined}>
+                  {renderNameCell(lot, shortDescription, img)}
                 </td>
-                <td className="muted" style={{ fontSize: 11, whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.25 }}>
+                <td
+                  className="muted"
+                  style={isCompact ? { fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 240 } : { fontSize: 11, whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.25 }}
+                  title={categoryText}
+                >
                   {categoryText || t("lotTable.noData")}
                 </td>
-                <td className="muted" style={{ fontSize: 12, whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.25 }}>
+                <td
+                  className="muted"
+                  style={isCompact ? { fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 } : { fontSize: 12, whiteSpace: "normal", overflowWrap: "anywhere", lineHeight: 1.25 }}
+                  title={tagText}
+                >
                   {tagText || t("lotTable.noData")}
                 </td>
                 <td style={{ fontWeight: 700 }}>{lot.quantity}</td>
@@ -453,6 +605,9 @@ export function LotTable({ lots, onChanged }: { lots: Lot[]; onChanged: () => Pr
           ) : null}
         </tbody>
       </table>
+      )}
+
+      {viewLot ? <LotViewModal lot={viewLot} onClose={() => setViewLot(null)} /> : null}
 
       {editForm ? (
         <Modal

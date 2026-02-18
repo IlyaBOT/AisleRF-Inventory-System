@@ -63,6 +63,9 @@
     "exportTxt": "To .txt",
     "lotsInfo": "Warehouse {name} - lots: {count}",
     "title": "Storage",
+    "viewCompact": "Compact",
+    "viewIcons": "Icons",
+    "viewWide": "Wide",
     "warehouseMissingSubtitle": "Use the button in the top right \"Warehouse: ...\" to select or create one.",
     "warehouseMissingTitle": "Warehouse is not selected"
   },
@@ -168,5 +171,10 @@
     "uid": "UID",
     "writeOffFailed": "Write-off failed",
     "writeOffOneTitle": "Write off 1"
+  },
+  "lotView": {
+    "created": "Created",
+    "title": "Lot #{uid}",
+    "updated": "Updated"
   }
 }

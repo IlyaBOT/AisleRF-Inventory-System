@@ -21,7 +21,7 @@ export function Modal({
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h3>{title}</h3>
           <button className="btn" onClick={onClose} title={t("common.close")}>
-            x
+            X
           </button>
         </div>
         <div>{children}</div>
